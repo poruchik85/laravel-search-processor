@@ -1,0 +1,35 @@
+{
+  "name": "poruchik85/laravel-search-processor",
+  "description": "Laravel search processor",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Aleksei Polovnikov",
+      "email": "alekseipolovnikov@gmail.com"
+    }
+  ],
+  "require": {
+    "php": "^8.1",
+    "laravel/framework": "^10.0"
+  },
+  "require-dev": {
+    
+  },
+  "autoload": {
+    "psr-4": {
+      "Poruchik85\\LaravelSearchProcessor\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Poruchik85\\LaravelSearchProcessor\\Providers\\ServiceProvider"
+      ]
+    }
+  }
+}
