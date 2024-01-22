@@ -53,7 +53,7 @@ abstract class SearchProcessor
 
         $filters = array_filter(
             $requestData,
-            static fn($key) => !in_array($key, ['page', 'sort']),
+            static fn($key) => !in_array($key, ['page_size', 'page', 'sort']),
             ARRAY_FILTER_USE_KEY,
         );
 
@@ -185,15 +185,11 @@ abstract class SearchProcessor
     {
         $filters = $this->filters();
 
-        if (isset($filters[$filter]['field'])) {
-            $field = $filters[$filter]['field'];
-        } else {
-            $field = $this->mainTable() . '.' . $filter;
-        }
+        $field = $filters[$filter]['field'] ?? $this->mainTable() . '.' . $filter;
 
         switch ($filters[$filter]['handler']) {
             case 'text':
-                $builder->where($field, 'ilike', '%' . $value . '%');
+                $builder->where($field, 'like', '%' . $value . '%');
                 break;
             case 'number':
                 if ($filters[$filter]['interval'] ?? false) {
@@ -211,9 +207,9 @@ abstract class SearchProcessor
                 break;
             case 'bool':
                 if ($value === 1 || $value === '1') {
-                    $builder->where($field, '=', 'true');
+                    $builder->where($field, true);
                 } elseif ($value === 0 || $value === '0') {
-                    $builder->where($field, '=', 'false');
+                    $builder->where($field, false);
                 }
 
                 break;
@@ -224,11 +220,11 @@ abstract class SearchProcessor
                     $builder->whereBetween($field, [$startDate, $endDate]);
                 }
                 if (count($value) === 2) {
-                    if ($value[0] !== static::NULL_DATE_VALUE) {
+                    if ($value[0] !== static::NULL_DATE_VALUE && $value[0] !== null) {
                         $startDate = Carbon::parse($value[0])->startOfDay();
                         $builder->where($field, '>=', $startDate);
                     }
-                    if ($value[1] !== static::NULL_DATE_VALUE) {
+                    if ($value[1] !== static::NULL_DATE_VALUE && $value[1] !== null) {
                         $endDate = Carbon::parse($value[1])->endOfDay();
                         $builder->where($field, '<=', $endDate);
                     }

@@ -3,8 +3,9 @@
 namespace Poruchik85\LaravelSearchProcessor\Providers;
 
 use Poruchik85\LaravelSearchProcessor\Services\SearchProcessorService;
+use Illuminate\Support\ServiceProvider;
 
-class ServiceProvider extends \Illuminate\Support\ServiceProvider
+class LaravelSearchProcessorServiceProvider extends ServiceProvider
 {
     /**
      * Register the service provider.
