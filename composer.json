@@ -8,12 +8,18 @@
       "email": "alekseipolovnikov@gmail.com"
     }
   ],
+  "scripts": {
+    "test": [
+      "vendor/bin/phpunit"
+    ]
+  },
   "require": {
     "php": "^8.1",
     "laravel/framework": "^10.0"
   },
   "require-dev": {
-    
+    "phpunit/phpunit": "*",
+    "orchestra/testbench": "^8.21"
   },
   "autoload": {
     "psr-4": {
@@ -22,13 +28,13 @@
   },
   "autoload-dev": {
     "psr-4": {
-      
+      "Poruchik85\\LaravelSearchProcessor\\Test\\": "tests/"
     }
   },
   "extra": {
     "laravel": {
       "providers": [
-        "Poruchik85\\LaravelSearchProcessor\\Providers\\ServiceProvider"
+        "Poruchik85\\LaravelSearchProcessor\\Providers\\LaravelSearchProcessorServiceProvider"
       ]
     }
   }
