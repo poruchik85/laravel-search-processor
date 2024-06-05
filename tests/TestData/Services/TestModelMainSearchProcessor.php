@@ -32,8 +32,7 @@ class TestModelMainSearchProcessor extends SearchProcessor
                 'time_field',
                 'test_model_dictionary_id',
             ])
-            ->leftJoin('test_model_dictionary', 'test_model_dictionary.id', '=', 'test_model_main.test_model_dictionary_id')
-            ->with('testModelItems');
+            ->leftJoin('test_model_dictionary', 'test_model_dictionary.id', '=', 'test_model_main.test_model_dictionary_id');
     }
 
     /**
@@ -87,6 +86,16 @@ class TestModelMainSearchProcessor extends SearchProcessor
                         ->where('test_model_item.name', 'like', '%' . $value . '%')
                         ->whereColumn('test_model_item.test_model_main_id', 'test_model_main.id');
                 }),
+            ],
+            'test_model_many_to_many_item_id' => [
+                'handler' => 'advanced_list',
+                'pivot_table' => 'test_model_main_test_model_many_to_many_item'
+            ],
+            'custom_advanced_list' => [
+                'handler' => 'advanced_list',
+                'pivot_table' => 'custom_items',
+                'main_field' => 'main_id',
+                'reference_field' => 'item_id',
             ],
         ];
     }

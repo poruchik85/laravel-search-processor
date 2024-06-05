@@ -2,10 +2,11 @@
 
 namespace Poruchik85\LaravelSearchProcessor\Services;
 
-use Poruchik85\LaravelSearchProcessor\Exceptions\MissingSearchProcessorException;
-use Poruchik85\LaravelSearchProcessor\Models\ListModel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Http\FormRequest;
+use Poruchik85\LaravelSearchProcessor\Exceptions\InvalidFilterConfigException;
+use Poruchik85\LaravelSearchProcessor\Exceptions\MissingSearchProcessorException;
+use Poruchik85\LaravelSearchProcessor\Models\ListModel;
 
 class SearchProcessorService
 {
@@ -20,6 +21,7 @@ class SearchProcessorService
      * @param FormRequest $request
      * @return ListModel
      * @throws MissingSearchProcessorException
+     * @throws InvalidFilterConfigException
      */
     public function search(FormRequest $request): ListModel
     {
@@ -31,6 +33,7 @@ class SearchProcessorService
      * @param FormRequest $request
      * @return Builder
      * @throws MissingSearchProcessorException
+     * @throws InvalidFilterConfigException
      */
     public function getQuery(FormRequest $request): Builder
     {

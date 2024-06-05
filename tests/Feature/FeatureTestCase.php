@@ -8,6 +8,7 @@ use Poruchik85\LaravelSearchProcessor\Services\SearchProcessorService;
 use Poruchik85\LaravelSearchProcessor\Test\TestData\Models\TestModelDictionary;
 use Poruchik85\LaravelSearchProcessor\Test\TestData\Models\TestModelItem;
 use Poruchik85\LaravelSearchProcessor\Test\TestData\Models\TestModelMain;
+use Poruchik85\LaravelSearchProcessor\Test\TestData\Models\TestModelManyToManyItem;
 use Poruchik85\LaravelSearchProcessor\Test\TestData\Requests\SearchTestModelMainRequest;
 use Poruchik85\LaravelSearchProcessor\Test\TestData\Services\TestModelMainSearchProcessor;
 
@@ -49,8 +50,11 @@ abstract class FeatureTestCase extends TestCase
         $this->loadMigrationsFrom(__DIR__ . '/../TestData/Database/Migrations');
         
         TestModelDictionary::factory()->count(3)->create();
+        TestModelManyToManyItem::factory()->count(50)->create();
         TestModelMain::factory()
             ->has(TestModelItem::factory()->count(5))
+            ->hasTestModelManyToManyItems(10)
+            ->hasTestModelManyToManyCustomItems(10)
             ->count(50)->create();
     }
 }

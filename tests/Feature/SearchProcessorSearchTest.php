@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Poruchik85\LaravelSearchProcessor\Test\TestData\Models\TestModelDictionary;
 use Poruchik85\LaravelSearchProcessor\Test\TestData\Models\TestModelItem;
 use Poruchik85\LaravelSearchProcessor\Test\TestData\Models\TestModelMain;
+use Poruchik85\LaravelSearchProcessor\Test\TestData\Models\TestModelManyToManyItem;
 use Poruchik85\LaravelSearchProcessor\Test\TestData\Requests\SearchTestModelMainRequest;
 
 class SearchProcessorSearchTest extends FeatureTestCase
@@ -174,7 +175,87 @@ class SearchProcessorSearchTest extends FeatureTestCase
         $request = new SearchTestModelMainRequest(['int_field_list' => $list]);
         $result = $this->service->search($request);
 
-        $this->assertEquals(count($expected), $result->count);
+        $this->assertCount(count($expected), $result->data);
+    }
+    
+    /**
+     * @test
+     */
+    public function search_by_advanced_list()
+    {
+        $items = TestModelManyToManyItem::inRandomOrder()->limit(10)->get()->pluck('id')->toArray();
+        $list = DB::table('test_model_main_test_model_many_to_many_item')->whereIn('test_model_many_to_many_item_id', $items)->pluck('test_model_main_id')->toArray();
+
+        $expected = TestModelMain::whereIn('id', $list)->get();
+
+        $request = new SearchTestModelMainRequest(['test_model_many_to_many_item_id' => $items]);
+        $result = $this->service->search($request);
+        
+        $this->assertCount(count($expected), $result->data);
+
+
+        $item = TestModelManyToManyItem::inRandomOrder()->first();
+        $list = DB::table('test_model_main_test_model_many_to_many_item')->where('test_model_many_to_many_item_id', $item->id)->pluck('test_model_main_id')->toArray();
+
+        $expected = TestModelMain::whereIn('id', $list)->get();
+
+        $request = new SearchTestModelMainRequest(['test_model_many_to_many_item_id' => $item->id]);
+        $result = $this->service->search($request);
+
+        $this->assertCount(count($expected), $result->data);
+    }
+    
+    /**
+     * @test
+     */
+    public function search_by_advanced_list_custom()
+    {
+        $items = TestModelManyToManyItem::inRandomOrder()->limit(10)->get()->pluck('id')->toArray();
+        $list = DB::table('custom_items')->whereIn('item_id', $items)->pluck('main_id')->toArray();
+
+        $expected = TestModelMain::whereIn('id', $list)->get();
+
+        $request = new SearchTestModelMainRequest(['custom_advanced_list' => $items]);
+        $result = $this->service->search($request);
+
+        $this->assertCount(count($expected), $result->data);
+
+
+        $item = TestModelManyToManyItem::inRandomOrder()->first();
+        $list = DB::table('custom_items')->where('item_id', $item->id)->pluck('main_id')->toArray();
+
+        $expected = TestModelMain::whereIn('id', $list)->get();
+
+        $request = new SearchTestModelMainRequest(['custom_advanced_list' => $item->id]);
+        $result = $this->service->search($request);
+
+        $this->assertCount(count($expected), $result->data);
+
+
+        $items = TestModelManyToManyItem::inRandomOrder()->limit(10)->get()->pluck('id')->toArray();
+        $list = DB::table('custom_items')->whereIn('item_id', $items)->pluck('main_id')->toArray();
+
+        $expected = TestModelMain::whereIn('id', $list)->get();
+
+        $request = new SearchTestModelMainRequest(['custom_advanced_list' => $items, 'custom_advanced_list_symbol' => 'or']);
+        $result = $this->service->search($request);
+
+        $this->assertCount(count($expected), $result->data);
+
+
+        $items = TestModelManyToManyItem::inRandomOrder()->limit(2)->get()->pluck('id')->toArray();
+        $list = DB::table('custom_items')
+            ->whereIn('item_id', $items)
+            ->groupBy('main_id')
+            ->havingRaw('count(*) = ' . count($items))
+            ->pluck('main_id')
+            ->toArray();
+        
+        $expected = TestModelMain::whereIn('id', $list)->get();
+
+        $request = new SearchTestModelMainRequest(['custom_advanced_list' => $items, 'custom_advanced_list_symbol' => 'and']);
+        $result = $this->service->search($request);
+
         $this->assertCount(count($expected), $result->data);
     }
 

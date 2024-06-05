@@ -32,6 +32,21 @@ return new class extends Migration
             $table->string('name');
             $table->integer('test_model_main_id');
         });
+
+        Schema::create('test_model_many_to_many_item', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+        });
+
+        Schema::create('test_model_main_test_model_many_to_many_item', function (Blueprint $table) {
+            $table->integer('test_model_main_id');
+            $table->integer('test_model_many_to_many_item_id');
+        });
+
+        Schema::create('custom_items', function (Blueprint $table) {
+            $table->integer('main_id');
+            $table->integer('item_id');
+        });
     }
 
     /**
@@ -39,6 +54,9 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('custom_items');
+        Schema::dropIfExists('test_model_main_test_model_many_to_many_item');
+        Schema::dropIfExists('test_model_many_to_many_item');
         Schema::dropIfExists('test_model_item');
         Schema::dropIfExists('test_model_dictionary');
         Schema::dropIfExists('test_model_main');

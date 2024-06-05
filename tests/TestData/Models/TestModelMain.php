@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
 use Poruchik85\LaravelSearchProcessor\Test\TestData\Database\Factories\TestModelMainFactory;
@@ -52,5 +53,15 @@ class TestModelMain extends Model
     public function testModelItems(): HasMany
     {
         return $this->hasMany(TestModelItem::class);
+    }
+
+    public function testModelManyToManyItems(): BelongsToMany
+    {
+        return $this->belongsToMany(TestModelManyToManyItem::class);
+    }
+
+    public function testModelManyToManyCustomItems(): BelongsToMany
+    {
+        return $this->belongsToMany(TestModelManyToManyItem::class, 'custom_items', 'main_id', 'item_id');
     }
 }

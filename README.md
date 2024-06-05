@@ -38,7 +38,7 @@ php artisan vendor:publish --provider="Poruchik85\LaravelSearchProcessor\Provide
 2.2. implement the `mainTable` method - it should return the name of the table of the desired model. This table is needed for regular filters on model fields to work. 
 3. you can also override the following settings in the class:  
 3.1. `const DEFAULT_PAGE_SIZE` - integer, default page size. If there is no paginator information in the search query, then the page number will always be the first (0), and the size is determined by this parameter. Request fields responsible for sorting - `page` and `page_size`;  
-3.2. `const DEFAULT_SORT` - array of the form
+3.2. `const DEFAULT_SORT` - array of the shape
     ```php
     [
         [
@@ -83,7 +83,19 @@ php artisan vendor:publish --provider="Poruchik85\LaravelSearchProcessor\Provide
 3.3.2. `number` - numeric filter. If this type is specified, the filter may also have the `interval` modifier. If it is present, the filter expects an array of two elements - for each it checks for presence and sets boundary conditions (the interval can be half-open on either side). If this modifier is not set, the filter waits for a single value and filters by exact match;  
 3.3.3. `bool` - boolean filter. Takes a single value. If it is equal to `"1"` or `1`, the filtered field must be `true`, and if it is equal to `"0"` or `0` - `false`;  
 3.3.4. `date` - filter by date. Accepts an array. If there is one element in the array, it filters by exact match. If two - filters by range similar to the `number` filter (the range can be half-open);  
-3.3.5. `list` - list filter. Accepts a single value or an array. In the case of a single value, filters by exact match, in the case of an array, by a match with at least one element;
+3.3.5. `list` - list filter. Accepts a single value or an array. In the case of a single value, filters by exact match, in the case of an array, by a match with at least one element;  
+3.3.6. `advanced_list` - advanced list filter. Designed for search over many-to-many relationships. Accepts a single value or an array, just like a simple list filter. Advanced list filter configuration requires an `pivot_table` field - it specifies many-to-many relation table. Config also may contain `main_field` field (`->mainTable() . '_id'` by default), and `reference_field` field (filter code by default) - it describes many-to-many references of pivot table.    
+   In addition, the request may contain another field `ADVANCED_LIST_FILTER_NAME_symbol`, containing the logical symbol `or` or `and`, and defining the rules for applying the filter. The default is `or`. For example, there are two tables `article` and `tag`, as well as a table connecting them `article_tag[article_id, tag_id]`. Then the search filter for articles by tags can be described as follows:
+   ```php
+   ...
+   'tag_id' => [
+       'handler' => 'advanced_list',
+       'pivot_table' => 'article_tag'
+   ],
+   ...
+   ```
+   , the linking fields `main_field` and `reference_field` are not specified in this case, because they will be correctly determined from the main table (`article`) and the filter code (`tag_id`).  
+   Moreover, if the request contains the parameter "...?tag_id[]=1&tag_id[]=2&..." (or "...?tag_id[]=1&tag_id[]=2&tag_id_symbol=or...") , then all articles with tags 1 or 2 will be found. However, if you pass the request "...?tag_id[]=1&tag_id[]=2&tag_id_symbol=and..." - then only articles containing BOTH passed tags will be selected.
 
 4. `protected function credentialsFilters($builder)` - in this method you can add specific conditions related to the calling user (restrictions on role, country, etc)
 5. `protected function sortMapping()` - In this method you can map fields for sorting. If a request arrives to sort by some non-trivial field, here you can describe how you actually need to sort; 

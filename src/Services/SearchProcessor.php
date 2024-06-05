@@ -2,6 +2,7 @@
 
 namespace Poruchik85\LaravelSearchProcessor\Services;
 
+use Poruchik85\LaravelSearchProcessor\Exceptions\InvalidFilterConfigException;
 use Poruchik85\LaravelSearchProcessor\Models\ListModel;
 use Poruchik85\LaravelSearchProcessor\Models\Paginator;
 use Poruchik85\LaravelSearchProcessor\Models\SearchFrame;
@@ -16,6 +17,9 @@ abstract class SearchProcessor
     protected const DEFAULT_SORT = [];
 
     protected const NULL_DATE_VALUE = 'null';
+    
+    protected const LOGICAL_SYMBOL_OR = 'or';
+    protected const LOGICAL_SYMBOL_AND = 'and';
 
     /**
      * @var SearchFrame
@@ -24,6 +28,7 @@ abstract class SearchProcessor
 
     /**
      * @return ListModel
+     * @throws InvalidFilterConfigException
      */
     final public function search(): ListModel
     {
@@ -105,6 +110,7 @@ abstract class SearchProcessor
     /**
      * @param mixed $builder
      * @return int
+     * @throws InvalidFilterConfigException
      */
     protected function wrapQuery(&$builder): int
     {
@@ -120,6 +126,7 @@ abstract class SearchProcessor
 
     /**
      * @return Builder
+     * @throws InvalidFilterConfigException
      */
     public function getQuery(): Builder
     {
@@ -151,13 +158,19 @@ abstract class SearchProcessor
 
     /**
      * @param mixed $builder
+     * @throws InvalidFilterConfigException
      */
     protected function addFilters($builder): void
     {
         $filterSignatures = $this->filters();
-        foreach ($this->searchFrame->getFilters() as $filter => $value) {
+        $frameFilters = $this->searchFrame->getFilters();
+        foreach ($frameFilters as $filter => $value) {
             if (!isset($filterSignatures[$filter]['handler'])) {
                 continue;
+            }
+            
+            if (isset($frameFilters[$filter . '_symbol'])) {
+                $value['symbol'] = $frameFilters[$filter . '_symbol'];
             }
 
             if (is_string($filterSignatures[$filter]['handler'])) {
@@ -178,21 +191,23 @@ abstract class SearchProcessor
 
     /**
      * @param mixed $builder
-     * @param string $filter
+     * @param string $filterName
      * @param mixed $value
+     * @throws InvalidFilterConfigException
      */
-    private function defaultFilterHandle($builder, string $filter, $value): void
+    private function defaultFilterHandle($builder, string $filterName, $value): void
     {
-        $filters = $this->filters();
+        $filter = $this->filters()[$filterName];
 
-        $field = $filters[$filter]['field'] ?? $this->mainTable() . '.' . $filter;
+        $field = $filter['field'] ?? $this->mainTable() . '.' . $filterName;
 
-        switch ($filters[$filter]['handler']) {
+        switch ($filter['handler']) {
             case 'text':
+            case 'string':
                 $builder->where($field, 'like', '%' . $value . '%');
                 break;
             case 'number':
-                if ($filters[$filter]['interval'] ?? false) {
+                if ($filter['interval'] ?? false) {
                     if (isset($value[0]) && $value[0] !== null && $value[0] !== '') {
                         $builder->where($field, '>=', $value[0]);
                     }
@@ -239,6 +254,61 @@ abstract class SearchProcessor
                 }
 
                 $builder->where($field, '=', $value);
+                break;
+            case 'advanced_list':
+                if (!$filter['pivot_table']) {
+                    throw new InvalidFilterConfigException('pivot_table for advanced_list filter not specified');
+                }
+
+                $pivotTable = $filter['pivot_table'];
+                $mainField = $filter['main_field'] ?? $this->mainTable() . '_id';
+                $referenceField = $filter['reference_field'] ?? $filterName;
+                
+                if (!is_array($value)) {
+                    $value = [$value];
+                }
+                $value = array_unique($value);
+                
+                if (isset($value['symbol'])) {
+                    $symbol = strtolower($value['symbol']);
+                    unset($value['symbol']);
+                } else {
+                    $symbol = static::LOGICAL_SYMBOL_OR;
+                }
+                
+                if (!in_array($symbol, [static::LOGICAL_SYMBOL_OR, static::LOGICAL_SYMBOL_AND])) {
+                    throw new InvalidFilterConfigException(sprintf(
+                        'invalid advanced_list symbol %s. Available symbols: %s',
+                        $symbol,
+                        implode(', ', [static::LOGICAL_SYMBOL_OR, static::LOGICAL_SYMBOL_AND])
+                    ));
+                }
+
+                if ($symbol === static::LOGICAL_SYMBOL_AND) {
+                    $builder->where(function ($query) use ($value, $pivotTable, $mainField, $referenceField) {
+                        $query->whereIn(
+                            $this->mainTable() . '.id',
+                            function ($q) use ($value, $pivotTable, $mainField, $referenceField) {
+                                $q
+                                    ->select($mainField)
+                                    ->from($pivotTable)
+                                    ->whereIntegerInRaw($referenceField, $value)
+                                    ->groupBy($mainField)
+                                    ->havingRaw('count(*) = ' . count($value))
+                                ;
+                            }
+                        );
+                    });
+                } else if ($symbol === static::LOGICAL_SYMBOL_OR) {
+                    $builder->where(function ($query) use ($value, $pivotTable, $mainField, $referenceField) {
+                        $query->whereIn(
+                            $this->mainTable() . '.id',
+                            function ($q) use ($value, $pivotTable, $mainField, $referenceField) {
+                                $q->select($mainField)->from($pivotTable)->whereIntegerInRaw($referenceField, $value);
+                            }
+                        );
+                    });
+                }
                 break;
             case 'equals':
             default:
