@@ -290,10 +290,10 @@ abstract class SearchProcessor
                             $this->mainTable() . '.id',
                             function ($q) use ($value, $pivotTable, $mainField, $referenceField) {
                                 $q
-                                    ->select($mainField)
+                                    ->select($pivotTable . '.' . $mainField)
                                     ->from($pivotTable)
-                                    ->whereIntegerInRaw($referenceField, $value)
-                                    ->groupBy($mainField)
+                                    ->whereIntegerInRaw($pivotTable . '.' . $referenceField, $value)
+                                    ->groupBy($pivotTable . '.' . $mainField)
                                     ->havingRaw('count(*) = ' . count($value))
                                 ;
                             }
@@ -304,7 +304,7 @@ abstract class SearchProcessor
                         $query->whereIn(
                             $this->mainTable() . '.id',
                             function ($q) use ($value, $pivotTable, $mainField, $referenceField) {
-                                $q->select($mainField)->from($pivotTable)->whereIntegerInRaw($referenceField, $value);
+                                $q->select($pivotTable . '.' . $mainField)->from($pivotTable)->whereIntegerInRaw($pivotTable . '.' . $referenceField, $value);
                             }
                         );
                     });
