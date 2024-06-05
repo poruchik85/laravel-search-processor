@@ -261,7 +261,8 @@ abstract class SearchProcessor
                 }
 
                 $pivotTable = $filter['pivot_table'];
-                $mainField = $filter['main_field'] ?? $this->mainTable() . '_id';
+                $mainTableParts = explode('.', $this->mainTable());
+                $mainField = $filter['main_field'] ?? end($mainTableParts) . '_id';
                 $referenceField = $filter['reference_field'] ?? $filterName;
                 
                 if (!is_array($value)) {
