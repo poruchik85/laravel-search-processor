@@ -170,6 +170,9 @@ abstract class SearchProcessor
             }
             
             if (isset($frameFilters[$filter . '_symbol'])) {
+                if (!is_array($value)) {
+                    $value = [$value];
+                }
                 $value['symbol'] = $frameFilters[$filter . '_symbol'];
             }
 
