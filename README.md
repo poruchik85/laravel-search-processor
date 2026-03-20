@@ -27,7 +27,7 @@ composer require poruchik85/laravel-search-processor
 
 and finally:
 ```
-php artisan vendor:publish --provider="Poruchik85\LaravelSearchProcessor\Providers\ServiceProvider"
+php artisan vendor:publish --provider="Poruchik85\LaravelSearchProcessor\Providers\LaravelSearchProcessorServiceProvider"
 ```
 
 
