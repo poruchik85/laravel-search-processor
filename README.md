@@ -96,6 +96,7 @@ php artisan vendor:publish --provider="Poruchik85\LaravelSearchProcessor\Provide
    ```
    , the linking fields `main_field` and `reference_field` are not specified in this case, because they will be correctly determined from the main table (`article`) and the filter code (`tag_id`).  
    Moreover, if the request contains the parameter "...?tag_id[]=1&tag_id[]=2&..." (or "...?tag_id[]=1&tag_id[]=2&tag_id_symbol=or...") , then all articles with tags 1 or 2 will be found. However, if you pass the request "...?tag_id[]=1&tag_id[]=2&tag_id_symbol=and..." - then only articles containing BOTH passed tags will be selected.
+3.3.7. `datetime_interval` filter by timestamp. Accepts an array, contains exactly two elements. Filters by range similar to the `number` filter (the range can be half-open);
 
 4. `protected function credentialsFilters($builder)` - in this method you can add specific conditions related to the calling user (restrictions on role, country, etc)
 5. `protected function sortMapping()` - In this method you can map fields for sorting. If a request arrives to sort by some non-trivial field, here you can describe how you actually need to sort; 

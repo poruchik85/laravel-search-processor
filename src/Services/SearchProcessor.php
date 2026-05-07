@@ -314,6 +314,16 @@ abstract class SearchProcessor
                     });
                 }
                 break;
+            case 'datetime_interval':
+                if (isset($value[0]) && $value[0] !== static::NULL_DATE_VALUE) {
+                    $startDate = (new Carbon())->setTimestamp($value[0]);
+                    $builder->where($field, '>=', $startDate);
+                }
+                if (isset($value[1]) && $value[1] !== static::NULL_DATE_VALUE) {
+                    $startDate = (new Carbon())->setTimestamp($value[1]);
+                    $builder->where($field, '<=', $startDate);
+                }
+                break;
             case 'equals':
             default:
                 $builder->where($field, '=', $value);
