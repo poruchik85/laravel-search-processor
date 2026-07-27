@@ -2,6 +2,7 @@
 
 namespace Poruchik85\LaravelSearchProcessor\Services;
 
+use Illuminate\Support\Facades\DB;
 use Poruchik85\LaravelSearchProcessor\Exceptions\InvalidFilterConfigException;
 use Poruchik85\LaravelSearchProcessor\Models\ListModel;
 use Poruchik85\LaravelSearchProcessor\Models\Paginator;
@@ -21,6 +22,8 @@ abstract class SearchProcessor
     protected const LOGICAL_SYMBOL_OR = 'or';
     protected const LOGICAL_SYMBOL_AND = 'and';
 
+    protected const PG_ESTIMATE_TOTAL_COUNT = false;
+    
     /**
      * @var SearchFrame
      */
@@ -117,7 +120,7 @@ abstract class SearchProcessor
         $this->addFilters($builder);
         $this->credentialsFilters($builder);
 
-        $count = $builder->count();
+        $count = $this->getCount($builder);
         $this->addSort($builder);
         $this->addPagination($builder);
 
@@ -139,6 +142,79 @@ abstract class SearchProcessor
         return $query;
     }
 
+    /**
+     * @param $builder
+     * @return int
+     */
+    private function getCount($builder): int
+    {
+        if (!static::PG_ESTIMATE_TOTAL_COUNT) {
+            return $builder->count();
+        }
+        if ($this->hasFilters()) {
+            return $builder->count();
+        }
+        if (DB::connection()->getDriverName() !== 'pgsql') {
+            return $builder->count();
+        }
+
+        return DB::scalar(sprintf("
+SELECT
+        (reltuples/relpages) * (
+            pg_relation_size('%s') /
+            (current_setting('block_size')::integer)
+        )
+FROM pg_class where relname = '%s';
+        ", $this->estimateTotalCountTable(), $this->estimateTotalCountTable()));
+    }
+
+    /**
+     * @return bool
+     */
+    private function hasFilters(): bool
+    {
+        $usedFilters = $this->searchFrame->getFilters();
+        $existedFilters = $this->filters();
+
+        if (count($usedFilters) === 0) {
+            return false;
+        }
+        foreach ($usedFilters as $code => $value) {
+            if (!key_exists($code, $existedFilters)) {
+                continue;
+            }
+            $existedFilter = $existedFilters[$code];
+            if (!$value) {
+                continue;
+            }
+
+            if ($existedFilter['handler'] === 'datetime_interval') {
+                if (!is_array($value)) {
+                    continue;
+                }
+                foreach ($value as $dateItem) {
+                    if ($dateItem && $dateItem !== static::NULL_DATE_VALUE) {
+                        return true;
+                    }
+                }
+
+                continue;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+    
+    /**
+     * @return string
+     */
+    protected function estimateTotalCountTable(): string
+    {
+        return $this->mainTable();
+    }
+    
     /**
      * @param mixed $builder
      */
